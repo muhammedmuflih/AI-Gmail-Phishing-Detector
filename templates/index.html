@@ -635,7 +635,17 @@
                     })
                 });
 
-                const result = await response.json();
+                let result;
+                const contentType = response.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
+                    result = await response.json();
+                } else {
+                    const raw = await response.text();
+                    throw new Error(
+                        `Server returned non-JSON response (${response.status}). ` +
+                        `Please refresh and try again.`
+                    );
+                }
 
                 if (result.success) {
                     // Show success
@@ -646,9 +656,9 @@
                     // Save email locally
                     localStorage.setItem('gmail_email', email);
                     
-                    // Redirect to dashboard
+                    // Redirect to route provided by backend (OTP or dashboard)
                     setTimeout(() => {
-                        window.location.href = '/gmail_dashboard';
+                        window.location.href = result.redirect || '/gmail_dashboard';
                     }, 1500);
 
                 } else {

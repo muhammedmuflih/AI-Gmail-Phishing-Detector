@@ -1901,6 +1901,24 @@ def page_not_found(e):
         'message': 'The requested URL was not found on the server.'
     }), 404
 
+@app.errorhandler(405)
+def method_not_allowed(e):
+    """Handle 405 errors"""
+    return jsonify({
+        'error': 'Method not allowed',
+        'status': 405,
+        'message': 'The requested HTTP method is not allowed for this URL.'
+    }), 405
+
+@app.errorhandler(400)
+def bad_request(e):
+    """Handle 400 errors"""
+    return jsonify({
+        'error': 'Bad request',
+        'status': 400,
+        'message': 'Invalid request format. Please send valid JSON data.'
+    }), 400
+
 @app.errorhandler(500)
 def internal_server_error(e):
     """Handle 500 errors"""
