@@ -198,8 +198,66 @@ def generate_otp(length=6):
     """Generate a random OTP"""
     return ''.join(random.choices(string.digits, k=length))
 
+def send_otp_via_resend(email, otp_code, api_key, from_email):
+    """Send OTP using Resend API over HTTPS"""
+    try:
+        body = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+                <h2>PhishGuard AI</h2>
+                <p>Email Verification</p>
+            </div>
+            <div style="padding: 30px; background-color: #f9f9f9; border-radius: 0 0 10px 10px;">
+                <p>Hello,</p>
+                <p>You requested to sign in to PhishGuard AI. Use the verification code below:</p>
+                <div style="background-color: #ffffff; border: 2px dashed #667eea; padding: 15px; text-align: center; margin: 20px 0; border-radius: 5px;">
+                    <span style="font-size: 24px; font-weight: bold; letter-spacing: 3px;">{otp_code}</span>
+                </div>
+                <p>This code will expire in <strong>10 minutes</strong>.</p>
+                <p>If you didn't request this code, you can safely ignore this email.</p>
+                <p>Thanks,<br>PhishGuard AI Security Team</p>
+            </div>
+        </div>
+        """
+
+        payload = {
+            "from": from_email,
+            "to": [email],
+            "subject": "Your PhishGuard AI Verification Code",
+            "html": body
+        }
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+        resp = requests.post(
+            "https://api.resend.com/emails",
+            headers=headers,
+            json=payload,
+            timeout=20
+        )
+
+        if resp.status_code in (200, 201):
+            return True, None
+
+        try:
+            err_data = resp.json()
+            err_msg = err_data.get("message") or err_data.get("error") or str(err_data)
+        except Exception:
+            err_msg = resp.text[:300]
+        return False, f"Resend API error ({resp.status_code}): {err_msg}"
+    except Exception as e:
+        return False, f"Resend request failed: {e}"
+
 def send_otp_email(email, otp_code, app_password):
     """Send OTP code to user's email"""
+    resend_key = os.getenv('RESEND_API_KEY', '').strip()
+    resend_from = os.getenv('RESEND_FROM_EMAIL', 'onboarding@resend.dev').strip()
+
+    # Prefer Resend on cloud platforms (HTTPS only, no SMTP port restrictions).
+    if resend_key:
+        return send_otp_via_resend(email, otp_code, resend_key, resend_from)
+
     try:
         # Create message
         msg = MIMEMultipart()

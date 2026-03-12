@@ -10,3 +10,7 @@ services:
         value: 3.11.9
       - key: EVENTLET_NO_GREENDNS
         value: "yes"
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM_EMAIL
+        value: onboarding@resend.dev
