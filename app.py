@@ -198,7 +198,7 @@ def generate_otp(length=6):
     """Generate a random OTP"""
     return ''.join(random.choices(string.digits, k=length))
 
-def send_otp_email(email, otp_code):
+def send_otp_email(email, otp_code, app_password):
     """Send OTP code to user's email"""
     try:
         # Create message
@@ -229,16 +229,24 @@ def send_otp_email(email, otp_code):
         
         msg.attach(MIMEText(body, 'html'))
         
-        # Connect to Gmail SMTP
-        with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            server.starttls()
-            server.login(email, session.get('gmail_config', {}).get('password', ''))
-            server.send_message(msg)
+        # Try SMTP with STARTTLS first (587), fallback to SMTP SSL (465)
+        try:
+            with smtplib.SMTP('smtp.gmail.com', 587, timeout=20) as server:
+                server.ehlo()
+                server.starttls()
+                server.ehlo()
+                server.login(email, app_password)
+                server.send_message(msg)
+        except Exception as primary_error:
+            print(f"OTP SMTP 587 failed: {primary_error}")
+            with smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=20) as server:
+                server.login(email, app_password)
+                server.send_message(msg)
         
-        return True
+        return True, None
     except Exception as e:
         print(f"Error sending OTP: {e}")
-        return False
+        return False, str(e)
 
 # Flask application setup
 app = Flask(__name__)
@@ -1046,7 +1054,8 @@ def gmail_test():
             }
             
             # Send OTP email
-            if send_otp_email(email_address, otp_code):
+            sent, otp_error = send_otp_email(email_address, otp_code, data['password'].strip())
+            if sent:
                 return jsonify({
                     'success': True,
                     'message': 'Gmail connection successful! OTP sent to your email.',
@@ -1058,7 +1067,7 @@ def gmail_test():
             else:
                 return jsonify({
                     'success': False,
-                    'message': 'Gmail connection successful but failed to send OTP. Please try again.'
+                    'message': f'Gmail connected but OTP email failed: {otp_error}'
                 })
         else:
             return jsonify({
@@ -1110,7 +1119,8 @@ def send_otp():
         }
         
         # Send OTP email
-        if send_otp_email(email_address, otp_code):
+        sent, otp_error = send_otp_email(email_address, otp_code, config.get('password', ''))
+        if sent:
             return jsonify({
                 'success': True,
                 'message': 'OTP sent to your email',
@@ -1119,7 +1129,7 @@ def send_otp():
         else:
             return jsonify({
                 'success': False,
-                'message': 'Failed to send OTP'
+                'message': f'Failed to send OTP: {otp_error}'
             })
             
     except Exception as e:
@@ -1228,7 +1238,8 @@ def resend_otp():
         }
         
         # Send OTP email
-        if send_otp_email(email_address, otp_code):
+        sent, otp_error = send_otp_email(email_address, otp_code, config.get('password', ''))
+        if sent:
             return jsonify({
                 'success': True,
                 'message': 'New OTP sent to your email',
@@ -1237,7 +1248,7 @@ def resend_otp():
         else:
             return jsonify({
                 'success': False,
-                'message': 'Failed to send OTP'
+                'message': f'Failed to send OTP: {otp_error}'
             })
             
     except Exception as e:
