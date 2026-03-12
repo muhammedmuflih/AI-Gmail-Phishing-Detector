@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Phishing Detector - Gmail Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --safe-color: #22c55e;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #3b82f6;
+            --job-color: #8b5cf6;
+            --supermarket-color: #f97316;
+            --persons-color: #06b6d4;
+
+            --bg-main: #f0f4f8;
+            --bg-surface: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: rgba(0,0,0,0.07);
+            --nav-gradient: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            --shadow-sm: 0 2px 12px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.12);
+
+            --card-safe-bg: #ffffff;
+            --card-phishing-bg: #fff1f2;
+            --card-job-bg: #faf5ff;
+            --card-supermarket-bg: #fff7ed;
+            --card-persons-bg: #f0fdfa;
+            --btn-view-bg: #f1f5f9;
+            --btn-view-text: #475569;
+            --btn-view-hover: #e2e8f0;
+        }
+
+        [data-theme="dark"] {
+            --bg-main: #080e1a;
+            --bg-surface: #111827;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: rgba(255,255,255,0.08);
+            --nav-gradient: linear-gradient(135deg, #020509 0%, #0a0f1a 100%);
+            --shadow-sm: 0 2px 12px rgba(0,0,0,0.4);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.6);
+            --card-safe-bg: #111827;
+            --card-phishing-bg: #2d1515;
+            --card-job-bg: #1a1030;
+            --card-supermarket-bg: #2d1a08;
+            --card-persons-bg: #0a2725;
+            --btn-view-bg: #1e2d42;
+            --btn-view-text: #e2e8f0;
+            --btn-view-hover: #162436;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-family: 'DM Sans', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            overflow-x: hidden;
+        }
+
+        .card, .modal-content, .list-group-item {
+            background-color: var(--bg-surface);
+            color: var(--text-primary);
+            border-color: var(--border-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .text-muted { color: var(--text-secondary) !important; }
+
+        /* ---- NAVBAR ---- */
+        .navbar {
+            background: var(--nav-gradient);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+            padding: 0.75rem 1.25rem;
+            position: sticky;
+            top: 0;
+            z-index: 1040;
+        }
+        .navbar-brand { font-family: 'Space Grotesk', sans-serif; font-weight: 700; letter-spacing: -0.5px; }
+
+        /* ---- SIDEBAR ---- */
+        .sidebar {
+            background: var(--bg-surface);
+            min-height: calc(100vh - 64px);
+            border-right: 1px solid var(--border-color);
+            position: sticky;
+            top: 64px;
+            height: calc(100vh - 64px);
+            overflow-y: auto;
+        }
+
+        .main-content {
+            padding: 24px;
+            background: var(--bg-main);
+            min-height: calc(100vh - 64px);
+        }
+
+        /* ---- BG ANIMATIONS ---- */
+        .bg-animations {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -1; overflow: hidden; pointer-events: none;
+        }
+        .floating-icon {
+            position: absolute; color: var(--text-secondary);
+            opacity: 0.04; animation: floatUp linear infinite;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(110vh) rotate(0deg) scale(0.8); }
+            100% { transform: translateY(-20vh) rotate(360deg) scale(1.2); }
+        }
+
+        /* ---- THEME TOGGLE ---- */
+        .theme-toggle {
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: white; border-radius: 20px; padding: 4px 12px; cursor: pointer;
+            transition: all 0.3s ease; display: flex; align-items: center; gap: 6px;
+        }
+        .theme-toggle:hover { background: rgba(255,255,255,0.2); transform: scale(1.05); }
+        [data-theme="dark"] .theme-toggle .bi-moon-fill { display: none; }
+        [data-theme="light"] .theme-toggle .bi-sun-fill { display: none; }
+
+        /* ---- STAT CARDS ---- */
+        .stat-card {
+            border-radius: 14px; padding: 18px; color: white;
+            margin-bottom: 12px; border: none;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s;
+            box-shadow: var(--shadow-sm); cursor: default;
+        }
+        .stat-card:hover { transform: translateY(-4px) scale(1.02); box-shadow: var(--shadow-md); }
+        .stat-card .stat-num { font-family: 'Space Grotesk', sans-serif; font-size: 1.7rem; font-weight: 700; line-height:1; }
+        .stat-card .stat-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.75; margin-top: 4px; }
+
+        /* ---- EMAIL CARDS ---- */
+        .email-card {
+            background: var(--card-safe-bg);
+            border-radius: 14px; padding: 16px; margin-bottom: 12px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            border-left: 5px solid var(--safe-color);
+            transition: all 0.25s ease; cursor: pointer;
+        }
+        .email-card:hover { transform: translateX(5px); box-shadow: var(--shadow-md); }
+        .email-card.phishing { border-left-color: var(--danger-color); background: var(--card-phishing-bg); }
+        .email-card.job-mail { border-left-color: var(--job-color); background: var(--card-job-bg); }
+        .email-card.supermarket-mail { border-left-color: var(--supermarket-color); background: var(--card-supermarket-bg); }
+        .email-card.persons-mail { border-left-color: var(--persons-color); background: var(--card-persons-bg); }
+
+        .email-sender { font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .email-subject { color: var(--text-secondary); margin-top: 5px; font-size: 0.92rem; word-break: break-word; }
+        .email-time { color: var(--text-secondary); font-size: 11px; margin-bottom: 8px; white-space: nowrap; }
+
+        /* ---- CATEGORY BADGE (inline on card) ---- */
+        .cat-badge {
+            font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+            padding: 2px 9px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px;
+        }
+        .cat-badge.phishing { background: rgba(239,68,68,0.12); color: #ef4444; }
+        .cat-badge.job-mail { background: rgba(139,92,246,0.12); color: #8b5cf6; }
+        .cat-badge.supermarket-mail { background: rgba(249,115,22,0.12); color: #f97316; }
+        .cat-badge.persons-mail { background: rgba(6,182,212,0.12); color: #06b6d4; }
+        .cat-badge.safe { background: rgba(34,197,94,0.12); color: #22c55e; }
+
+        /* ---- TABS ---- */
+        .nav-tabs { border-bottom: none; gap: 4px; flex-wrap: nowrap; overflow-x: auto; }
+        .nav-tabs::-webkit-scrollbar { height: 0; }
+        .nav-tabs .nav-link {
+            color: var(--text-secondary); border: none; border-radius: 10px 10px 0 0;
+            padding: 9px 16px; font-size: 0.85rem; font-weight: 500; white-space: nowrap;
+            background: transparent; transition: all 0.2s ease;
+        }
+        .nav-tabs .nav-link:hover { background: var(--btn-view-bg); color: var(--text-primary); }
+        .nav-tabs .nav-link.active {
+            background: var(--bg-surface); color: var(--text-primary);
+            font-weight: 700; box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        }
+        .tab-count {
+            display: inline-flex; align-items: center; justify-content: center;
+            background: var(--btn-view-bg); color: var(--text-secondary);
+            border-radius: 10px; font-size: 10px; font-weight: 700;
+            min-width: 20px; height: 18px; padding: 0 5px; margin-left: 5px;
+        }
+        .nav-link.active .tab-count { background: #3b82f6; color: white; }
+
+        /* ---- VIEW BUTTON ---- */
+        .btn-view-details {
+            background-color: var(--btn-view-bg); color: var(--btn-view-text);
+            border: 1px solid var(--border-color); padding: 5px 16px;
+            border-radius: 20px; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+            transition: all 0.2s ease; text-align: center; text-decoration: none;
+            display: inline-block; outline: none;
+        }
+        .btn-view-details:hover { background-color: var(--btn-view-hover); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+
+        /* ---- REASON BADGES ---- */
+        .reasons-container { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 5px; }
+        .reason-badge {
+            background: rgba(100,116,139,0.1); color: var(--text-primary);
+            border: 1px solid var(--border-color); padding: 3px 10px;
+            border-radius: 20px; font-size: 10.5px; font-weight: 500;
+        }
+        .reason-badge.phishing { background: rgba(239,68,68,0.1); color: #ef4444; border-color: rgba(239,68,68,0.3); }
+        .reason-badge.job-mail { background: rgba(139,92,246,0.1); color: #8b5cf6; border-color: rgba(139,92,246,0.3); }
+        .reason-badge.supermarket-mail { background: rgba(249,115,22,0.1); color: #f97316; border-color: rgba(249,115,22,0.3); }
+        .reason-badge.persons-mail { background: rgba(6,182,212,0.1); color: #06b6d4; border-color: rgba(6,182,212,0.3); }
+
+        /* ---- MONITOR STATUS ---- */
+        .monitor-status {
+            padding: 5px 14px; border-radius: 20px; font-weight: 700;
+            font-size: 0.82rem; background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2); letter-spacing: 0.5px;
+        }
+        .status-active { color: #4ade80; }
+        .status-inactive { color: #f87171; }
+
+        .real-time-indicator {
+            width: 10px; height: 10px; border-radius: 50%; display: inline-block;
+            margin-right: 7px; animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.3); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .loader {
+            border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid #fff;
+            border-radius: 50%; width: 18px; height: 18px;
+            animation: spin 0.8s linear infinite; display: inline-block; vertical-align: middle;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        hr { border-color: var(--border-color); }
+
+        /* ---- MODAL ---- */
+        .modal-content { border: none; border-radius: 18px; }
+        .modal-header { border-bottom: 1px solid var(--border-color); background: var(--bg-surface); border-radius: 18px 18px 0 0; }
+        .modal-body { background: var(--bg-main); border-radius: 0 0 18px 18px; }
+        .detail-item {
+            background: var(--bg-surface); border-radius: 12px;
+            padding: 14px 16px; margin-bottom: 12px; border: 1px solid var(--border-color);
+        }
+        .detail-label { color: var(--text-secondary); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: 600; }
+        .detail-value { color: var(--text-primary); font-size: 0.97rem; font-weight: 500; word-break: break-word; }
+
+        /* ---- EMPTY STATE ---- */
+        .empty-state { text-align: center; padding: 50px 20px; opacity: 0.65; }
+        .empty-state i { font-size: 2.8rem; margin-bottom: 12px; color: var(--text-secondary); display: block; }
+        .empty-state h5 { color: var(--text-secondary); font-weight: 500; font-size: 0.95rem; }
+
+        /* ---- CATEGORY FILTER PILLS ---- */
+        .category-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+        .category-pill {
+            padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;
+            cursor: pointer; border: 2px solid transparent; transition: all 0.2s;
+            display: inline-flex; align-items: center; gap: 5px;
+        }
+        .category-pill.pill-all { background: rgba(59,130,246,0.12); color: #3b82f6; border-color: rgba(59,130,246,0.3); }
+        .category-pill.pill-all.active, .category-pill.pill-all:hover { background: #3b82f6; color: white; border-color: #3b82f6; }
+        .category-pill.pill-job { background: rgba(139,92,246,0.12); color: #8b5cf6; border-color: rgba(139,92,246,0.3); }
+        .category-pill.pill-job.active, .category-pill.pill-job:hover { background: #8b5cf6; color: white; border-color: #8b5cf6; }
+        .category-pill.pill-market { background: rgba(249,115,22,0.12); color: #f97316; border-color: rgba(249,115,22,0.3); }
+        .category-pill.pill-market.active, .category-pill.pill-market:hover { background: #f97316; color: white; border-color: #f97316; }
+        .category-pill.pill-persons { background: rgba(6,182,212,0.12); color: #06b6d4; border-color: rgba(6,182,212,0.3); }
+        .category-pill.pill-persons.active, .category-pill.pill-persons:hover { background: #06b6d4; color: white; border-color: #06b6d4; }
+
+        /* ---- ACCOUNT BOX ---- */
+        .account-box {
+            padding: 12px; border-radius: 12px; border: 1px solid var(--border-color);
+            background: var(--bg-main); margin-bottom: 16px;
+        }
+
+        /* ---- TOP METRIC CARDS ---- */
+        .metric-card {
+            border-radius: 16px; padding: 20px; border: none;
+            box-shadow: var(--shadow-sm); color: white; height: 100%;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .metric-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+        .metric-num { font-family: 'Space Grotesk', sans-serif; font-size: 2rem; font-weight: 700; line-height: 1; }
+        .metric-label { font-size: 0.73rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; margin-top: 5px; }
+
+        /* Email content styles */
+        .email-header {
+            background: var(--bg-surface);
+            border-bottom: 2px solid var(--border-color);
+        }
+        .email-content-wrapper {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .email-html-content {
+            background: white;
+            color: black;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+        }
+        .email-text-content {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .email-attachments {
+            background: var(--bg-surface);
+            border-top: 2px solid var(--border-color);
+        }
+        .email-analysis {
+            background: var(--bg-surface);
+            border-top: 2px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animations" id="bgAnimations"></div>
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center fw-bold" href="#">
+                <i class="bi bi-shield-check fs-4 me-2 text-info"></i> PhishGuard <span class="text-info ms-1">AI</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <div class="d-flex align-items-center flex-wrap gap-2 text-white mt-2 mt-lg-0">
+                    <span id="monitorStatus" class="monitor-status">
+                        <span class="status-inactive"><i class="bi bi-circle-fill" style="font-size:9px"></i> INACTIVE</span>
+                    </span>
+                    <button class="btn btn-sm btn-outline-light" onclick="toggleMonitoring()" id="monitorBtn">
+                        <i class="bi bi-play-fill"></i> Start Monitoring
+                    </button>
+                    <button class="btn btn-sm btn-outline-light" onclick="scanInbox()" id="scanBtn">
+                        <i class="bi bi-search"></i> Scan Inbox
+                    </button>
+                    <button class="btn btn-sm btn-outline-info" onclick="runDemoScan()" id="demoBtn">
+                        <i class="bi bi-play-circle"></i> Demo
+                    </button>
+                    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle Theme">
+                        <i class="bi bi-moon-fill text-warning"></i>
+                        <i class="bi bi-sun-fill text-warning"></i>
+                    </button>
+                    <div id="googleNavUser" class="d-flex align-items-center ms-lg-2 bg-dark bg-opacity-25 rounded-pill px-2 py-1" style="display:none!important">
+                        <img id="navGooglePicture" src="" alt="" style="width:26px;height:26px;border-radius:50%;border:2px solid #34A853;display:none">
+                        <span id="navGoogleName" class="ms-2 me-2 fw-semibold" style="font-size:.85rem;"></span>
+                    </div>
+                    <button class="btn btn-sm btn-danger ms-lg-1" onclick="logoutUser()">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- SIDEBAR -->
+            <div class="col-md-3 col-lg-2 sidebar p-0 pt-3">
+                <div class="p-3">
+                    <h6 class="fw-bold text-uppercase text-secondary mb-3" style="font-size: 0.72rem; letter-spacing: 1px;">
+                        <i class="bi bi-person-badge"></i> Account
+                    </h6>
+                    <div class="account-box">
+                        <p id="connectedEmail" class="mb-1 text-truncate fw-semibold" style="font-size: 0.88rem;">Loading...</p>
+                        <span class="text-success small fw-bold" id="gmailVerified"><i class="bi bi-patch-check-fill"></i> Verified</span>
+                    </div>
+
+                    <hr>
+
+                    <h6 class="fw-bold text-uppercase text-secondary mb-3" style="font-size: 0.72rem; letter-spacing: 1px;">
+                        <i class="bi bi-bar-chart-fill"></i> Overview
+                    </h6>
+
+                    <div class="stat-card" style="background: linear-gradient(135deg,#667eea,#764ba2)">
+                        <div class="stat-num" id="totalEmails">0</div>
+                        <div class="stat-label">Total Scanned</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg,#ef4444,#b91c1c)">
+                        <div class="stat-num" id="phishingCount">0</div>
+                        <div class="stat-label">Phishing</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg,#8b5cf6,#6d28d9)">
+                        <div class="stat-num" id="jobCount">0</div>
+                        <div class="stat-label">Job Mails</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg,#f97316,#c2410c)">
+                        <div class="stat-num" id="supermarketCount">0</div>
+                        <div class="stat-label">Supermarket Mails</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg,#06b6d4,#0891b2)">
+                        <div class="stat-num" id="personsCount">0</div>
+                        <div class="stat-label">Persons Mails</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg,#22c55e,#15803d)">
+                        <div class="stat-num" id="safeCount">0</div>
+                        <div class="stat-label">Safe</div>
+                    </div>
+
+                    <hr>
+
+                    <button class="btn btn-sm btn-outline-secondary w-100 mb-2" onclick="clearStats()">
+                        <i class="bi bi-trash3"></i> Clear Data
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger w-100" onclick="disconnect()">
+                        <i class="bi bi-power"></i> Disconnect
+                    </button>
+
+                    <div class="mt-4 p-2 rounded text-center" style="background: var(--bg-main); font-size: 0.78rem; border: 1px solid var(--border-color); border-radius: 10px;">
+                        <div class="text-muted">Last Scan: <strong id="lastScanTime" class="text-primary">Never</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MAIN CONTENT -->
+            <div class="col-md-9 col-lg-10 main-content">
+                <div id="realTimeAlert" class="alert alert-info border-0 shadow-sm mb-4" style="display:none; border-radius:12px;">
+                    <span class="real-time-indicator" style="background:#3b82f6"></span>
+                    <strong>Live Monitoring:</strong> Scanning incoming mail stream...
+                </div>
+
+                <!-- TOP METRIC CARDS -->
+                <div class="row mb-4 g-3">
+                    <div class="col-6 col-md-3">
+                        <div class="metric-card" style="background: linear-gradient(135deg,#3b82f6,#1d4ed8)">
+                            <div class="metric-num" id="currentRisk">0%</div>
+                            <div class="metric-label">Risk Level</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="metric-card" style="background: linear-gradient(135deg,#22c55e,#15803d)">
+                            <div class="metric-num" id="lastScanTimeCard">--:--</div>
+                            <div class="metric-label">Last Activity</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="metric-card" style="background: linear-gradient(135deg,#ef4444,#991b1b)">
+                            <div class="metric-num" id="blockedCount">0</div>
+                            <div class="metric-label">Threats Blocked</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="metric-card" style="background: linear-gradient(135deg,#8b5cf6,#5b21b6)">
+                            <div class="metric-num" id="categorizedCount">0</div>
+                            <div class="metric-label">Categorized</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EMAIL TABS -->
+                <div class="card border-0 shadow-sm" style="border-radius: 18px; overflow: hidden;">
+                    <div class="card-header bg-transparent border-bottom pt-3 pb-0 px-3">
+                        <ul class="nav nav-tabs border-bottom-0" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active fw-bold" data-bs-toggle="tab" href="#allEmails" onclick="setActiveTab('all')">
+                                    <i class="bi bi-inboxes"></i> Stream
+                                    <span class="tab-count" id="tabCountAll">0</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link fw-bold text-danger" data-bs-toggle="tab" href="#phishingEmails" onclick="setActiveTab('phishing')">
+                                    <i class="bi bi-bug-fill"></i> Threats
+                                    <span class="tab-count" id="tabCountPhishing">0</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link fw-bold" data-bs-toggle="tab" href="#jobEmails" onclick="setActiveTab('job')" style="color: #8b5cf6;">
+                                    <i class="bi bi-briefcase-fill"></i> Job Mail
+                                    <span class="tab-count" id="tabCountJob">0</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link fw-bold" data-bs-toggle="tab" href="#supermarketEmails" onclick="setActiveTab('supermarket')" style="color: #f97316;">
+                                    <i class="bi bi-cart-fill"></i> Supermarket
+                                    <span class="tab-count" id="tabCountSupermarket">0</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link fw-bold" data-bs-toggle="tab" href="#personsEmails" onclick="setActiveTab('persons')" style="color: #06b6d4;">
+                                    <i class="bi bi-person-fill"></i> Persons
+                                    <span class="tab-count" id="tabCountPersons">0</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link fw-bold text-success" data-bs-toggle="tab" href="#safeEmails" onclick="setActiveTab('safe')">
+                                    <i class="bi bi-shield-check"></i> Clean
+                                    <span class="tab-count" id="tabCountSafe">0</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body px-3 py-3" style="background: var(--bg-main); min-height: 420px;">
+                        <div class="tab-content">
+                            <!-- ALL EMAILS -->
+                            <div class="tab-pane fade show active" id="allEmails">
+                                <div id="allEmailsList" class="emails-list">
+                                    <div class="empty-state"><i class="bi bi-envelope-dash"></i><h5>No emails scanned yet</h5></div>
+                                </div>
+                            </div>
+                            <!-- PHISHING -->
+                            <div class="tab-pane fade" id="phishingEmails">
+                                <div id="phishingEmailsList" class="emails-list">
+                                    <div class="empty-state"><i class="bi bi-shield-slash text-danger"></i><h5>No threats detected</h5></div>
+                                </div>
+                            </div>
+                            <!-- JOB -->
+                            <div class="tab-pane fade" id="jobEmails">
+                                <div class="mb-3 p-3 rounded-3" style="background: rgba(139,92,246,0.06); border: 1px solid rgba(139,92,246,0.15);">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <i class="bi bi-briefcase-fill text-purple" style="color:#8b5cf6; font-size:1.1rem;"></i>
+                                        <strong style="color:#8b5cf6;">Job Mail Category</strong>
+                                    </div>
+                                    <small class="text-muted">Emails from job platforms (LinkedIn, Indeed, Naukri, etc.), recruiters, and HR communications.</small>
+                                </div>
+                                <div id="jobEmailsList" class="emails-list">
+                                    <div class="empty-state"><i class="bi bi-briefcase text-purple" style="color:#8b5cf6;"></i><h5>No job emails detected</h5></div>
+                                </div>
+                            </div>
+                            <!-- SUPERMARKET -->
+                            <div class="tab-pane fade" id="supermarketEmails">
+                                <div class="mb-3 p-3 rounded-3" style="background: rgba(249,115,22,0.06); border: 1px solid rgba(249,115,22,0.15);">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <i class="bi bi-cart-fill" style="color:#f97316; font-size:1.1rem;"></i>
+                                        <strong style="color:#f97316;">Supermarket / Shopping Mail</strong>
+                                    </div>
+                                    <small class="text-muted">Promotions, discounts, offers, and newsletters from supermarkets, grocery apps, and retail stores.</small>
+                                </div>
+                                <div id="supermarketEmailsList" class="emails-list">
+                                    <div class="empty-state"><i class="bi bi-cart text-warning" style="color:#f97316;"></i><h5>No supermarket emails detected</h5></div>
+                                </div>
+                            </div>
+                            <!-- PERSONS -->
+                            <div class="tab-pane fade" id="personsEmails">
+                                <div class="mb-3 p-3 rounded-3" style="background: rgba(6,182,212,0.06); border: 1px solid rgba(6,182,212,0.15);">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <i class="bi bi-person-fill" style="color:#06b6d4; font-size:1.1rem;"></i>
+                                        <strong style="color:#06b6d4;">Persons Mail Category</strong>
+                                    </div>
+                                    <small class="text-muted">Personal emails from Gmail, Yahoo, Outlook, and other personal email service providers worldwide.</small>
+                                </div>
+                                <div id="personsEmailsList" class="emails-list">
+                                    <div class="empty-state"><i class="bi bi-person text-info" style="color:#06b6d4;"></i><h5>No persons emails detected</h5></div>
+                                </div>
+                            </div>
+                            <!-- SAFE -->
+                            <div class="tab-pane fade" id="safeEmails">
+                                <div id="safeEmailsList" class="emails-list">
+                                    <div class="empty-state"><i class="bi bi-check2-circle text-success"></i><h5>No safe emails</h5></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Details Modal -->
+    <div class="modal fade" id="emailDetailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-envelope-paper me-2"></i> Email Analysis Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="emailDetailsContent">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <div class="spinner-border spinner-border-sm" style="width: 3rem; height: 3rem;"></div>
+                        </div>
+                        <p class="mt-2">Loading details...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="viewFullEmailBtn">
+                        <i class="bi bi-envelope-open"></i> View Full Email
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full Email Modal -->
+    <div class="modal fade" id="fullEmailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-envelope-open me-2"></i> Full Email Content
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="fullEmailContent">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <div class="spinner-border spinner-border-sm" style="width: 3rem; height: 3rem;"></div>
+                        </div>
+                        <p class="mt-2">Loading email content...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+
+    <script>
+        // ============================================
+        // GLOBAL STATE
+        // ============================================
+        let socket = null;
+        let monitoringActive = false;
+        let allEmails = [];
+        let emailDetailsModal = null;
+        let fullEmailModal = null;
+        let activeTab = 'all';
+        let currentEmailId = null;
+
+        let emailStats = {
+            total_scanned: 0,
+            phishing_detected: 0,
+            safe_emails: 0,
+            job_emails: 0,
+            supermarket_emails: 0,
+            persons_emails: 0,
+            last_scan: null
+        };
+
+        // ============================================
+        // CATEGORY DETECTION
+        // ============================================
+        const JOB_KEYWORDS = [
+            'linkedin', 'indeed', 'naukri', 'monster', 'glassdoor',
+            'shine', 'timesjobs', 'freshersworld', 'internshala',
+            'angel.co', 'wellfound', 'hired', 'ziprecruiter',
+            'careerbuilder', 'simplyhired', 'jobvite', 'workday',
+            'lever.co', 'greenhouse.io', 'icims.com', 'smartrecruiters.com',
+            'workable.com', 'bamboohr', 'facebook', 'twitter'
+        ];
+
+        const SUPERMARKET_KEYWORDS = [
+            'offer', 'offers', 'discount', 'sale', 'grocery', 'bigbasket', 'blinkit',
+            'zepto', 'instamart', 'amazon fresh', 'flipkart grocery', 'dunzo',
+            'swiggy instamart', 'jiomart', 'spencers', 'more supermarket',
+            'reliance fresh', 'nature basket', 'organic', 'daily needs',
+            'vegetables', 'fruits', 'groceries', 'delivery', 'order',
+            'mart', 'store', 'shop', 'retail', 'superstore', 'hypermarket'
+        ];
+
+        const PERSONS_KEYWORDS = [
+            // Gmail
+            'gmail.com', 'googlemail.com', 'mail.google.com',
+            
+            // Yahoo
+            'yahoo.com', 'yahoo.co', 'yahoo.org', 'yahoo.net', 'yahoo.co.in',
+            'yahoo.co.uk', 'yahoo.com.br', 'yahoo.com.ar', 'yahoo.com.au',
+            'yahoo.com.cn', 'yahoo.com.fr', 'yahoo.com.de', 'yahoo.com.gr',
+            'yahoo.com.hk', 'yahoo.com.mx', 'yahoo.com.my', 'yahoo.com.ph',
+            'yahoo.com.sg', 'yahoo.com.tw', 'yahoo.com.vn', 'yahoo.es',
+            'yahoo.fr', 'yahoo.ie', 'yahoo.in', 'yahoo.it', 'ymail.com',
+            
+            // Microsoft/Hotmail/Outlook
+            'hotmail.com', 'hotmail.co', 'hotmail.org', 'hotmail.net',
+            'hotmail.co.uk', 'outlook.com', 'outlook.co', 'outlook.org',
+            'outlook.net', 'outlook.co.in', 'live.com', 'live.co',
+            'live.org', 'live.net', 'live.co.uk', 'msn.com',
+            
+            // Apple
+            'icloud.com', 'icloud.co', 'icloud.org', 'icloud.net',
+            'me.com', 'mac.com', 'mac.co', 'mac.org', 'mac.net',
+            
+            // AOL
+            'aol.com', 'aol.co', 'aol.org', 'aol.net', 'aim.com',
+            
+            // Mail.com
+            'mail.com', 'mail.co', 'mail.org', 'mail.net',
+            
+            // GMX
+            'gmx.com', 'gmx.co', 'gmx.org', 'gmx.net', 'gmx.de',
+            'gmx.fr', 'gmx.es', 'gmx.at', 'gmx.ch', 'gmx.li',
+            
+            // Secure providers
+            'protonmail.com', 'protonmail.co', 'protonmail.org',
+            'protonmail.net', 'proton.me', 'protonmail.ch',
+            'tutanota.com', 'tutanota.co', 'tutanota.org',
+            'tutanota.net', 'tutanota.de', 'tuta.io',
+            
+            // Yandex
+            'yandex.com', 'yandex.co', 'yandex.org', 'yandex.net',
+            'yandex.ru', 'ya.ru', 'yandex.ua', 'yandex.by',
+            'yandex.kz', 'yandex.uz',
+            
+            // Indian providers
+            'rediffmail.com', 'rediffmail.co', 'rediffmail.org',
+            'rediffmail.net', 'rediff.com', 'sancharnet.in',
+            'vsnl.net', 'vsnl.com',
+            
+            // Zoho
+            'zoho.com', 'zoho.co', 'zoho.org', 'zoho.net',
+            'zoho.eu', 'zoho.in',
+            
+            // Other international
+            'inbox.com', 'inbox.lv', 'email.com', 'email.org',
+            'fastmail.com', 'fastmail.co', 'fastmail.org',
+            'fastmail.net', 'hushmail.com', 'hushmail.co',
+            'hushmail.org', 'hushmail.net', 'startmail.com',
+            'runbox.com', 'posteo.net', 'kolabnow.com',
+            'mailfence.com', 'countermail.com', 'safemail.io',
+            'privatemail.io', 'cyberfear.com', 'guerrillamail.com',
+            
+            // Educational
+            'edu', 'ac.uk', 'edu.au', 'ac.jp', 'ac.in', 'edu.cn',
+            'student', 'alumni', 'grad', 'faculty', 'college',
+            'university', 'school', 'campus', 'academic'
+        ];
+
+        function isPersonalEmail(sender) {
+            // Extract domain from email
+            if (!sender || !sender.includes('@')) return false;
+            
+            // Clean the sender address - extract email from "Name <email@domain.com>" format
+            if (sender.includes('<') && sender.includes('>')) {
+                const emailMatch = sender.match(/<([^>]+)>/);
+                if (emailMatch) {
+                    sender = emailMatch[1];
+                }
+            }
+            
+            const domain = sender.split('@')[1].toLowerCase().trim();
+            
+            // Remove any subdomain parts (e.g., mail.gmail.com -> gmail.com)
+            const domainParts = domain.split('.');
+            if (domainParts.length > 2) {
+                // Keep only the last two parts for common TLDs
+                if (['co', 'com', 'org', 'net', 'gov', 'edu', 'ac'].includes(domainParts[domainParts.length - 2])) {
+                    domain = '.'.join(domainParts.slice(-3));
+                } else {
+                    domain = '.'.join(domainParts.slice(-2));
+                }
+            }
+            
+            // Check if it's a personal email domain
+            for (const personalDomain of PERSONS_KEYWORDS) {
+                if (domain === personalDomain || domain.endsWith('.' + personalDomain)) {
+                    return true;
+                }
+            }
+            
+            // Additional check: if domain contains common personal email patterns
+            const personalPatterns = [
+                /^mail\./,
+                /^email\./,
+                /^myemail\./,
+                /^e-?mail\./,
+                /.*mail\.(com|net|org|co|io)$/,
+                /.*email\.(com|net|org|co|io)$/
+            ];
+            
+            for (const pattern of personalPatterns) {
+                if (pattern.test(domain)) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+
+        function detectEmailCategory(email) {
+            const text = ((email.sender || '') + ' ' + (email.subject || '') + ' ' + (email.reasons || []).join(' ')).toLowerCase();
+
+            if (email.is_phishing) return 'phishing';
+
+            const isJob = JOB_KEYWORDS.some(kw => text.includes(kw));
+            const isSupermarket = SUPERMARKET_KEYWORDS.some(kw => text.includes(kw));
+
+            // Check if it's a people email (personal email domain)
+            const sender = (email.sender || '').toLowerCase();
+            const isPeople = isPersonalEmail(sender);
+
+            if (isJob) return 'job-mail';
+            if (isSupermarket) return 'supermarket-mail';
+            if (isPeople) return 'persons-mail';
+            return 'safe';
+        }
+
+        // ============================================
+        // THEME
+        // ============================================
+        function initTheme() {
+            const saved = localStorage.getItem('dashboardTheme') || 'light';
+            document.documentElement.setAttribute('data-theme', saved);
+            generateFloatingIcons();
+        }
+        function toggleTheme() {
+            const cur = document.documentElement.getAttribute('data-theme');
+            const next = cur === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('dashboardTheme', next);
+        }
+        function generateFloatingIcons() {
+            const container = document.getElementById('bgAnimations');
+            if (!container) return;
+            container.innerHTML = '';
+            const icons = ['bi-envelope', 'bi-shield-lock', 'bi-bug', 'bi-shield-check', 'bi-briefcase', 'bi-cart', 'bi-person'];
+            for (let i = 0; i < 14; i++) {
+                const el = document.createElement('i');
+                el.className = `bi ${icons[Math.floor(Math.random() * icons.length)]} floating-icon`;
+                el.style.left = `${Math.random() * 100}vw`;
+                el.style.fontSize = `${Math.random() * 3 + 1}rem`;
+                el.style.animationDuration = `${Math.random() * 20 + 15}s`;
+                el.style.animationDelay = `-${Math.random() * 20}s`;
+                container.appendChild(el);
+            }
+        }
+
+        // ============================================
+        // WEBSOCKET
+        // ============================================
+        function connectWebSocket() {
+            try {
+                socket = io();
+                socket.on('connect', () => { console.log('WS connected'); fetchGmailStatus(); });
+                socket.on('gmail_email_update', data => {
+                    handleNewEmail({
+                        id: data.id || Date.now().toString() + Math.random(),
+                        sender: data.sender || 'Unknown',
+                        subject: data.subject || 'No Subject',
+                        is_phishing: data.is_phishing || false,
+                        risk_level: data.risk_level || (data.is_phishing ? 'High' : 'Low'),
+                        reasons: data.reasons || [],
+                        date: data.timestamp || new Date().toISOString()
+                    });
+                });
+                socket.on('gmail_status_update', data => {
+                    monitoringActive = data.monitoring_active;
+                    updateMonitorUI(monitoringActive);
+                    if (data.stats) { emailStats = { ...emailStats, ...data.stats }; updateStatistics(); }
+                });
+                socket.on('gmail_phishing_alert', data => showNotification('🚨 Phishing detected: ' + data.subject, 'danger'));
+            } catch (e) {
+                console.warn('WebSocket not available (demo mode)');
+            }
+        }
+
+        // ============================================
+        // API CALLS
+        // ============================================
+        async function fetchGmailStatus() {
+            try {
+                const r = await fetch('/get_gmail_status');
+                const d = await r.json();
+                monitoringActive = d.active;
+                updateMonitorUI(monitoringActive);
+                if (d.email) document.getElementById('connectedEmail').textContent = d.email;
+                if (d.stats) { emailStats = { ...emailStats, ...d.stats }; updateStatistics(); }
+            } catch (e) { console.error(e); }
+        }
+
+        async function toggleMonitoring() {
+            const ep = monitoringActive ? '/stop_monitoring' : '/start_gmail_monitoring';
+            try {
+                const r = await fetch(ep, { method: 'POST' });
+                const d = await r.json();
+                if (d.success) { monitoringActive = !monitoringActive; updateMonitorUI(monitoringActive); }
+            } catch (e) { console.error(e); }
+        }
+
+        async function scanInbox() {
+            const btn = document.getElementById('scanBtn');
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<span class="loader"></span> Scanning...';
+            btn.disabled = true;
+            try {
+                const r = await fetch('/scan_gmail_inbox', { method: 'POST' });
+                const d = await r.json();
+                if (d.success) {
+                    allEmails = []; clearEmailLists();
+                    d.emails.forEach(e => handleNewEmail(e));
+                    if (d.stats) { emailStats = { ...emailStats, ...d.stats }; updateStatistics(); }
+                    showNotification('Scan completed successfully', 'success');
+                } else { showNotification('Scan failed: ' + d.message, 'danger'); }
+            } catch (e) { showNotification('Error scanning inbox', 'danger'); }
+            finally { btn.innerHTML = orig; btn.disabled = false; }
+        }
+
+        async function runDemoScan() {
+            const btn = document.getElementById('demoBtn');
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<span class="loader"></span> Demo...';
+            btn.disabled = true;
+            try {
+                const r = await fetch('/gmail_demo_scan', { method: 'POST' });
+                const d = await r.json();
+                if (d.success) {
+                    allEmails = []; clearEmailLists();
+                    d.emails.forEach(e => { e.is_demo = true; handleNewEmail(e); });
+                    if (d.stats) { emailStats = { ...emailStats, ...d.stats }; updateStatistics(); }
+                    showNotification('Demo scan completed', 'success');
+                }
+            } catch (e) {
+                // Demo fallback: inject sample data if server not available
+                loadSampleDemoData();
+            }
+            finally { btn.innerHTML = orig; btn.disabled = false; }
+        }
+
+        function loadSampleDemoData() {
+            allEmails = []; clearEmailLists();
+            const samples = [
+                { id: 'd1', sender: 'notifications@linkedin.com', subject: 'You have 5 new job views this week', is_phishing: false, reasons: ['job platform', 'linkedin'], date: new Date().toISOString(), is_demo: true },
+                { id: 'd2', sender: 'john.smith@gmail.com', subject: 'Meeting tomorrow at 3 PM', is_phishing: false, reasons: ['personal email domain'], date: new Date().toISOString(), is_demo: true },
+                { id: 'd3', sender: 'offers@bigbasket.com', subject: '🛒 Weekend Sale: 30% off on fresh vegetables!', is_phishing: false, reasons: ['discount', 'grocery offer'], date: new Date().toISOString(), is_demo: true },
+                { id: 'd4', sender: 'security@paypa1-verify.com', subject: 'Urgent: Verify your account NOW or it will be suspended', is_phishing: true, risk_level: 'High', reasons: ['Suspicious domain', 'Urgency language', 'Impersonation'], date: new Date().toISOString(), is_demo: true },
+                { id: 'd5', sender: 'hr@infosys.com', subject: 'Interview Invitation - Software Engineer Role', is_phishing: false, reasons: ['interview', 'hr team'], date: new Date().toISOString(), is_demo: true },
+                { id: 'd6', sender: 'no-reply@indeed.com', subject: 'New jobs matching "Frontend Developer" in Bangalore', is_phishing: false, reasons: ['job platform', 'indeed'], date: new Date().toISOString(), is_demo: true },
+                { id: 'd7', sender: 'admin@bank-update.xyz', subject: 'Your bank account is at risk – click to secure', is_phishing: true, risk_level: 'Critical', reasons: ['Fake domain', 'Fear tactics', 'Phishing link'], date: new Date().toISOString(), is_demo: true },
+                { id: 'd8', sender: 'newsletter@amazon.in', subject: 'Your Amazon Fresh order has been delivered', is_phishing: false, reasons: ['order update', 'delivery'], date: new Date().toISOString(), is_demo: true },
+                { id: 'd9', sender: 'alerts@naukri.com', subject: 'You have 3 new interview calls waiting', is_phishing: false, reasons: ['job platform', 'naukri', 'interview'], date: new Date().toISOString(), is_demo: true },
+                { id: 'd10', sender: 'mary.johnson@yahoo.com', subject: 'Re: Project discussion', is_phishing: false, reasons: ['personal email domain'], date: new Date().toISOString(), is_demo: true }
+            ];
+            samples.forEach(e => handleNewEmail(e));
+            showNotification('Demo data loaded (server not connected)', 'info');
+        }
+
+        async function clearStats() {
+            if (!confirm('Clear all statistics and emails?')) return;
+            try {
+                const r = await fetch('/clear_stats', { method: 'POST' });
+                const d = await r.json();
+                if (d.success) { resetAll(); showNotification('Statistics cleared', 'success'); }
+            } catch (e) { resetAll(); showNotification('Statistics cleared (local)', 'info'); }
+        }
+
+        function resetAll() {
+            allEmails = [];
+            emailStats = { total_scanned: 0, phishing_detected: 0, safe_emails: 0, job_emails: 0, supermarket_emails: 0, persons_emails: 0, last_scan: null };
+            clearEmailLists(); updateStatistics();
+        }
+
+        async function disconnect() {
+            if (monitoringActive && !confirm('Monitoring active. Disconnect?')) return;
+            localStorage.removeItem('gmail_email');
+            window.location.href = '/gmail_logout';
+        }
+        function logoutUser() { disconnect(); }
+
+        // ============================================
+        // TABS
+        // ============================================
+        function setActiveTab(tab) { activeTab = tab; }
+
+        // ============================================
+        // EMAIL DETAILS
+        // ============================================
+        function viewEmailDetails(emailId) {
+            currentEmailId = emailId; // Set the current email ID
+            
+            const email = allEmails.find(e => String(e.id) === String(emailId));
+            if (!email) { 
+                showNotification('Email details not found', 'danger'); 
+                return; 
+            }
+            
+            if (!emailDetailsModal) emailDetailsModal = new bootstrap.Modal(document.getElementById('emailDetailsModal'));
+
+            const cat = email.category || detectEmailCategory(email);
+            const catLabels = { 
+                phishing: '🚨 Phishing', 
+                'job-mail': '💼 Job Mail', 
+                'supermarket-mail': '🛒 Supermarket', 
+                'persons-mail': '👤 Persons',
+                safe: '✅ Safe' 
+            };
+            const catColors = { 
+                phishing: 'bg-danger', 
+                'job-mail': 'bg-purple', 
+                'supermarket-mail': 'bg-warning text-dark', 
+                'persons-mail': 'bg-info',
+                safe: 'bg-success' 
+            };
+            const riskBadge = email.risk_level === 'Critical' ? 'bg-danger' : 
+                             email.risk_level === 'High' ? 'bg-warning text-dark' : 
+                             email.risk_level === 'Medium' ? 'bg-info text-dark' : 'bg-success';
+
+            document.getElementById('emailDetailsContent').innerHTML = `
+                <div class="detail-item">
+                    <div class="detail-label">From</div>
+                    <div class="detail-value">${escapeHtml(email.sender)}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Subject</div>
+                    <div class="detail-value">${escapeHtml(email.subject)}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Category</div>
+                    <div class="detail-value">
+                        <span class="badge ${catColors[cat] || 'bg-secondary'} p-2">${catLabels[cat] || cat}</span>
+                        <span class="badge ${riskBadge} ms-2 p-2">${email.risk_level || 'Low'} Risk</span>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Detection Tags</div>
+                    <div class="detail-value">
+                        ${(email.reasons && email.reasons.length > 0)
+                            ? email.reasons.map(r => `<span class="reason-badge ${cat}">${escapeHtml(r)}</span>`).join(' ')
+                            : '<span class="text-muted">No specific reasons recorded</span>'}
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Received</div>
+                    <div class="detail-value">${new Date(email.date).toLocaleString()}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Email ID</div>
+                    <div class="detail-value"><small class="text-muted">${escapeHtml(String(email.id))}</small></div>
+                </div>
+                ${email.is_demo ? '<div class="alert alert-info mt-3 rounded-3"><i class="bi bi-info-circle"></i> This is a demo email</div>' : ''}
+            `;
+            
+            emailDetailsModal.show();
+        }
+
+        // ============================================
+        // VIEW FULL EMAIL
+        // ============================================
+        async function viewFullEmail(emailId) {
+            if (!emailId) return;
+            
+            // Close the details modal
+            emailDetailsModal.hide();
+            
+            // Show the full email modal
+            fullEmailModal.show();
+            
+            // Reset the content
+            document.getElementById('fullEmailContent').innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <div class="spinner-border spinner-border-sm" style="width: 3rem; height: 3rem;"></div>
+                    </div>
+                    <p class="mt-2">Loading email content...</p>
+                </div>
+            `;
+            
+            try {
+                const response = await fetch(`/get_email_content/${emailId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayFullEmail(data.email);
+                } else {
+                    document.getElementById('fullEmailContent').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle"></i> Error: ${data.message}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error fetching email content:', error);
+                document.getElementById('fullEmailContent').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Error: Could not fetch email content
+                    </div>
+                `;
+            }
+        }
+
+        function displayFullEmail(email) {
+            const bodyHtml = email.body_html || '';
+            const bodyText = email.body_text || '';
+            
+            // Create a safe HTML version of the email
+            let safeBodyHtml = '';
+            if (bodyHtml) {
+                // Sanitize the HTML to prevent XSS attacks
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = bodyHtml;
+                
+                // Remove potentially dangerous elements
+                const dangerousElements = tempDiv.querySelectorAll('script, iframe, object, embed, form');
+                dangerousElements.forEach(el => el.remove());
+                
+                // Make all links open in a new window and add nofollow
+                const links = tempDiv.querySelectorAll('a');
+                links.forEach(link => {
+                    link.setAttribute('target', '_blank');
+                    link.setAttribute('rel', 'noopener noreferrer nofollow');
+                });
+                
+                safeBodyHtml = tempDiv.innerHTML;
+            }
+            
+            // Format the email content
+            const emailContent = `
+                <div class="email-header mb-3 p-3 border-bottom">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>From:</strong> ${escapeHtml(email.from)}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Date:</strong> ${new Date(email.date).toLocaleString()}
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <strong>To:</strong> ${escapeHtml(email.to)}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Subject:</strong> ${escapeHtml(email.subject)}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="email-body p-3">
+                    <h6 class="mb-3">Email Content:</h6>
+                    <div class="email-content-wrapper">
+                        ${safeBodyHtml ? 
+                            `<div class="email-html-content border p-3 rounded">${safeBodyHtml}</div>` : 
+                            `<pre class="email-text-content border p-3 rounded bg-light">${escapeHtml(bodyText)}</pre>`
+                        }
+                    </div>
+                </div>
+                
+                ${email.attachments && email.attachments.length > 0 ? `
+                    <div class="email-attachments mt-3 p-3 border-top">
+                        <h6>Attachments (${email.attachments.length}):</h6>
+                        <ul class="list-group">
+                            ${email.attachments.map(att => `
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span><i class="bi bi-paperclip me-2"></i>${escapeHtml(att.filename)}</span>
+                                    <span class="badge bg-secondary">${formatFileSize(att.size)}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+                
+                <div class="email-analysis mt-3 p-3 border-top">
+                    <h6>Analysis:</h6>
+                    <div class="alert ${email.analysis.is_phishing ? 'alert-danger' : 'alert-success'}">
+                        <strong>Category:</strong> ${email.analysis.category}<br>
+                        <strong>Risk Level:</strong> ${email.analysis.risk_level}<br>
+                        <strong>Phishing Score:</strong> ${email.analysis.phishing_score}%<br>
+                        <strong>Is Phishing:</strong> ${email.analysis.is_phishing ? 'Yes' : 'No'}
+                    </div>
+                    ${email.analysis.reasons && email.analysis.reasons.length > 0 ? `
+                        <div class="mt-2">
+                            <strong>Reasons:</strong>
+                            <ul>
+                                ${email.analysis.reasons.map(reason => `<li>${escapeHtml(reason)}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            document.getElementById('fullEmailContent').innerHTML = emailContent;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // ============================================
+        // UI UPDATES
+        // ============================================
+        function updateMonitorUI(active) {
+            const statusDiv = document.getElementById('monitorStatus');
+            const btn = document.getElementById('monitorBtn');
+            const alertDiv = document.getElementById('realTimeAlert');
+            if (active) {
+                statusDiv.innerHTML = '<span class="status-active"><i class="bi bi-broadcast"></i> LIVE</span>';
+                btn.innerHTML = '<i class="bi bi-stop-circle"></i> Halt Monitor';
+                alertDiv.style.display = 'block';
+            } else {
+                statusDiv.innerHTML = '<span class="status-inactive"><i class="bi bi-circle"></i> IDLE</span>';
+                btn.innerHTML = '<i class="bi bi-play-circle"></i> Start Monitor';
+                alertDiv.style.display = 'none';
+            }
+        }
+
+        function handleNewEmail(email) {
+            email.id = email.id || Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            email.sender = email.sender || 'Unknown';
+            email.subject = email.subject || 'No Subject';
+            email.is_phishing = email.is_phishing || false;
+            email.risk_level = email.risk_level || (email.is_phishing ? 'High' : 'Low');
+            email.reasons = email.reasons || [];
+            email.date = email.date || new Date().toISOString();
+
+            const cat = detectEmailCategory(email);
+            email.category = cat;
+
+            emailStats.total_scanned++;
+            emailStats.last_scan = new Date().toISOString();
+
+            if (cat === 'phishing') emailStats.phishing_detected++;
+            else if (cat === 'job-mail') emailStats.job_emails++;
+            else if (cat === 'supermarket-mail') emailStats.supermarket_emails++;
+            else if (cat === 'persons-mail') emailStats.persons_emails++;
+            else emailStats.safe_emails++;
+
+            allEmails.unshift(email);
+
+            const card = createEmailCard(email);
+
+            // All tab
+            const allList = document.getElementById('allEmailsList');
+            removeEmptyState(allList);
+            allList.prepend(card.cloneNode(true));
+
+            // Category-specific tab
+            if (cat === 'phishing') {
+                const pl = document.getElementById('phishingEmailsList');
+                removeEmptyState(pl); pl.prepend(card.cloneNode(true));
+            } else if (cat === 'job-mail') {
+                const jl = document.getElementById('jobEmailsList');
+                removeEmptyState(jl); jl.prepend(card.cloneNode(true));
+            } else if (cat === 'supermarket-mail') {
+                const sl = document.getElementById('supermarketEmailsList');
+                removeEmptyState(sl); sl.prepend(card.cloneNode(true));
+            } else if (cat === 'persons-mail') {
+                const pl = document.getElementById('personsEmailsList');
+                removeEmptyState(pl); pl.prepend(card.cloneNode(true));
+            } else {
+                const safeL = document.getElementById('safeEmailsList');
+                removeEmptyState(safeL); safeL.prepend(card.cloneNode(true));
+            }
+
+            updateStatistics();
+            updateTabCounts();
+        }
+
+        function removeEmptyState(el) {
+            if (el.children.length === 1 && el.children[0].classList.contains('empty-state')) el.innerHTML = '';
+        }
+
+        const CAT_ICONS = {
+            phishing: 'bi-bug-fill text-danger',
+            'job-mail': 'bi-briefcase-fill',
+            'supermarket-mail': 'bi-cart-fill',
+            'persons-mail': 'bi-person-fill',
+            safe: 'bi-shield-check text-success'
+        };
+
+        function createEmailCard(email) {
+            const card = document.createElement('div');
+            const cat = email.category || 'safe';
+            card.className = `email-card ${cat}`;
+
+            const timeStr = new Date(email.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const catLabelMap = { 
+                phishing: 'Phishing', 
+                'job-mail': 'Job Mail', 
+                'supermarket-mail': 'Supermarket', 
+                'persons-mail': 'Persons',
+                safe: 'Safe' 
+            };
+
+            const reasonsHtml = email.reasons && email.reasons.length > 0
+                ? `<div class="reasons-container">
+                    ${email.reasons.slice(0, 2).map(r =>
+                        `<span class="reason-badge ${cat}">${escapeHtml(r.substring(0,30))}${r.length > 30 ? '…' : ''}</span>`
+                    ).join('')}
+                   </div>`
+                : '';
+
+            card.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div style="flex:1; min-width:0;">
+                        <div class="email-sender">
+                            <i class="bi ${CAT_ICONS[cat] || 'bi-envelope'}" style="${cat === 'job-mail' ? 'color:#8b5cf6' : cat === 'supermarket-mail' ? 'color:#f97316' : cat === 'persons-mail' ? 'color:#06b6d4' : ''}"></i>
+                            <span class="text-truncate" style="max-width:260px;">${escapeHtml(email.sender)}</span>
+                            <span class="cat-badge ${cat}">${catLabelMap[cat] || cat}</span>
+                        </div>
+                        <div class="email-subject">
+                            <strong>${escapeHtml(email.subject.substring(0,65))}${email.subject.length > 65 ? '…' : ''}</strong>
+                        </div>
+                        ${reasonsHtml}
+                    </div>
+                    <div class="text-end flex-shrink-0">
+                        <div class="email-time">${timeStr}</div>
+                        <button class="btn-view-details" onclick="event.stopPropagation(); viewEmailDetails('${escapeHtml(String(email.id))}')">
+                            View
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Make the entire card clickable to view the email
+            card.addEventListener('click', function(e) {
+                if (!e.target.classList.contains('btn-view-details') && !e.target.closest('.btn-view-details')) {
+                    viewEmailDetails(String(email.id));
+                }
+            });
+
+            return card;
+        }
+
+        function updateStatistics() {
+            document.getElementById('totalEmails').textContent = emailStats.total_scanned || 0;
+            document.getElementById('phishingCount').textContent = emailStats.phishing_detected || 0;
+            document.getElementById('jobCount').textContent = emailStats.job_emails || 0;
+            document.getElementById('supermarketCount').textContent = emailStats.supermarket_emails || 0;
+            document.getElementById('personsCount').textContent = emailStats.persons_emails || 0;
+            document.getElementById('safeCount').textContent = emailStats.safe_emails || 0;
+            document.getElementById('blockedCount').textContent = emailStats.phishing_detected || 0;
+
+            const total = emailStats.total_scanned || 1;
+            document.getElementById('currentRisk').textContent = Math.round(((emailStats.phishing_detected || 0) / total) * 100) + '%';
+
+            const categorized = (emailStats.job_emails || 0) + (emailStats.supermarket_emails || 0) + (emailStats.persons_emails || 0);
+            document.getElementById('categorizedCount').textContent = categorized;
+
+            if (emailStats.last_scan) {
+                try {
+                    const t = new Date(emailStats.last_scan).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    document.getElementById('lastScanTime').textContent = t;
+                    document.getElementById('lastScanTimeCard').textContent = t;
+                } catch(e) {}
+            }
+        }
+
+        function updateTabCounts() {
+            document.getElementById('tabCountAll').textContent = allEmails.length;
+            document.getElementById('tabCountPhishing').textContent = emailStats.phishing_detected || 0;
+            document.getElementById('tabCountJob').textContent = emailStats.job_emails || 0;
+            document.getElementById('tabCountSupermarket').textContent = emailStats.supermarket_emails || 0;
+            document.getElementById('tabCountPersons').textContent = emailStats.persons_emails || 0;
+            document.getElementById('tabCountSafe').textContent = emailStats.safe_emails || 0;
+        }
+
+        function clearEmailLists() {
+            const config = [
+                { id: 'allEmailsList', icon: 'bi-envelope-dash', msg: 'No emails scanned yet' },
+                { id: 'phishingEmailsList', icon: 'bi-shield-slash text-danger', msg: 'No threats detected' },
+                { id: 'jobEmailsList', icon: 'bi-briefcase', msg: 'No job emails detected', color: '#8b5cf6' },
+                { id: 'supermarketEmailsList', icon: 'bi-cart', msg: 'No supermarket emails detected', color: '#f97316' },
+                { id: 'personsEmailsList', icon: 'bi-person', msg: 'No persons emails detected', color: '#06b6d4' },
+                { id: 'safeEmailsList', icon: 'bi-check2-circle text-success', msg: 'No safe emails' }
+            ];
+            config.forEach(c => {
+                const el = document.getElementById(c.id);
+                el.innerHTML = `<div class="empty-state"><i class="bi ${c.icon}" ${c.color ? `style="color:${c.color}"` : ''}></i><h5>${c.msg}</h5></div>`;
+            });
+            updateTabCounts();
+        }
+
+        function showNotification(msg, type = 'info') {
+            console.log(`[${type}] ${msg}`);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const d = document.createElement('div');
+            d.textContent = text;
+            return d.innerHTML;
+        }
+
+        // ============================================
+        // INIT
+        // ============================================
+        document.addEventListener('DOMContentLoaded', function() {
+            initTheme();
+            connectWebSocket();
+
+            // Initialize modals
+            emailDetailsModal = new bootstrap.Modal(document.getElementById('emailDetailsModal'));
+            fullEmailModal = new bootstrap.Modal(document.getElementById('fullEmailModal'));
+            
+            // Add event listener for the "View Full Email" button
+            document.getElementById('viewFullEmailBtn').addEventListener('click', function() {
+                if (currentEmailId) {
+                    viewFullEmail(currentEmailId);
+                }
+            });
+
+            const userEmail = localStorage.getItem('gmail_email') || sessionStorage.getItem('userEmail') || 'Not connected';
+            document.getElementById('connectedEmail').textContent = userEmail;
+
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('demo') === 'true' || localStorage.getItem('gmail_demo') === 'true') {
+                document.getElementById('gmailVerified').innerHTML = '<i class="bi bi-stars"></i> Demo Mode';
+                document.getElementById('gmailVerified').className = 'text-warning small fw-bold';
+            }
+
+            updateTabCounts();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP Verification - PhishGuard AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --gmail-red: #EA4335;
+            --gmail-blue: #4285F4;
+            --gmail-green: #34A853;
+            --gmail-yellow: #FBBC05;
+            --gmail-gradient: linear-gradient(135deg, #EA4335 0%, #4285F4 50%, #34A853 100%);
+            --dark-bg: #202124;
+            --card-bg: #292A2D;
+            --text-light: #E8EAED;
+            --text-muted: #9AA0A6;
+            --border-color: #3C4043;
+        }
+        
+        body {
+            font-family: 'Google Sans', 'Roboto', Arial, sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .otp-container {
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        .otp-card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        
+        .otp-header {
+            background: var(--gmail-gradient);
+            padding: 2.5rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .otp-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .otp-header h2 {
+            position: relative;
+            z-index: 1;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .otp-header p {
+            position: relative;
+            z-index: 1;
+            opacity: 0.9;
+            margin: 0;
+            font-size: 1rem;
+        }
+        
+        .otp-body {
+            padding: 2.5rem 2rem;
+        }
+        
+        .email-display {
+            background: rgba(66, 133, 244, 0.1);
+            border: 1px solid rgba(66, 133, 244, 0.3);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            font-size: 1rem;
+        }
+        
+        .email-display i {
+            color: var(--gmail-blue);
+            margin-right: 10px;
+        }
+        
+        .email-display span {
+            font-weight: 600;
+            color: var(--gmail-blue);
+            word-break: break-all;
+        }
+        
+        .otp-inputs {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+        
+        .otp-input {
+            width: 55px;
+            height: 70px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-light);
+            transition: all 0.3s ease;
+        }
+        
+        .otp-input:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--gmail-blue);
+            box-shadow: 0 0 0 4px rgba(66, 133, 244, 0.2);
+            outline: none;
+            transform: scale(1.05);
+        }
+        
+        .otp-input.filled {
+            border-color: var(--gmail-green);
+            background: rgba(52, 168, 83, 0.1);
+        }
+        
+        .otp-input.error {
+            border-color: var(--gmail-red);
+            animation: shake 0.5s ease;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+        
+        .btn-otp {
+            padding: 14px 28px;
+            font-weight: 600;
+            font-size: 1rem;
+            border-radius: 12px;
+            border: none;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-otp::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn-otp:active::after {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn-otp-primary {
+            background: var(--gmail-gradient);
+            color: white;
+        }
+        
+        .btn-otp-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(234, 67, 53, 0.4);
+        }
+        
+        .btn-otp-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-light);
+            border: 2px solid var(--border-color);
+        }
+        
+        .btn-otp-secondary:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .btn-otp:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .countdown {
+            text-align: center;
+            margin: 1.5rem 0;
+            font-size: 1rem;
+            padding: 10px;
+            border-radius: 50px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+        
+        .countdown.normal {
+            color: var(--gmail-blue);
+        }
+        
+        .countdown.warning {
+            color: var(--gmail-yellow);
+            animation: pulse 1s infinite;
+        }
+        
+        .countdown.danger {
+            color: var(--gmail-red);
+            animation: pulse 0.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .countdown span {
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+        
+        .otp-message {
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            display: none;
+            font-weight: 500;
+            animation: slideDown 0.3s ease;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .otp-message.success {
+            background: rgba(52, 168, 83, 0.1);
+            border: 1px solid rgba(52, 168, 83, 0.3);
+            color: var(--gmail-green);
+        }
+        
+        .otp-message.error {
+            background: rgba(234, 67, 53, 0.1);
+            border: 1px solid rgba(234, 67, 53, 0.3);
+            color: var(--gmail-red);
+        }
+        
+        .otp-message.info {
+            background: rgba(66, 133, 244, 0.1);
+            border: 1px solid rgba(66, 133, 244, 0.3);
+            color: var(--gmail-blue);
+        }
+        
+        .loader {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .security-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 50px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        
+        .security-badge i {
+            color: var(--gmail-green);
+        }
+        
+        .security-badge span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        @media (max-width: 480px) {
+            .otp-header {
+                padding: 2rem 1rem;
+            }
+            
+            .otp-body {
+                padding: 2rem 1rem;
+            }
+            
+            .otp-input {
+                width: 45px;
+                height: 60px;
+                font-size: 24px;
+            }
+            
+            .security-badge {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="otp-container">
+        <div class="otp-card">
+            <div class="otp-header">
+                <h2 class="mb-0">🔐 Verify Your Email</h2>
+                <p class="mb-0">Enter the 6-digit code sent to your email</p>
+            </div>
+            
+            <div class="otp-body">
+                <div class="email-display">
+                    <i class="bi bi-envelope-fill"></i>
+                    Code sent to: <span id="userEmail">loading...</span>
+                </div>
+                
+                <div id="otpMessage" class="otp-message"></div>
+                
+                <form id="otpForm">
+                    <div class="otp-inputs">
+                        <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off" required>
+                        <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off" required>
+                        <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off" required>
+                        <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off" required>
+                        <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off" required>
+                        <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off" required>
+                    </div>
+                    
+                    <div class="countdown normal" id="countdown">
+                        <i class="bi bi-clock-history me-2"></i>
+                        Code expires in <span id="countdownTime">03:00</span>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-otp btn-otp-primary" id="verifyBtn">
+                        <i class="bi bi-check2-circle me-2"></i>
+                        Verify Code
+                    </button>
+                    
+                    <button type="button" class="btn btn-otp btn-otp-secondary" id="resendBtn">
+                        <i class="bi bi-arrow-repeat me-2"></i>
+                        Resend Code
+                    </button>
+                </form>
+                
+                <div class="security-badge">
+                    <span><i class="bi bi-shield-check"></i> 3 min expiry</span>
+                    <span><i class="bi bi-shield-check"></i> 3 attempts</span>
+                    <span><i class="bi bi-shield-check"></i> 2FA enabled</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get user email from session storage or local storage
+            const userEmail = localStorage.getItem('gmail_email') || sessionStorage.getItem('userEmail') || 'your email';
+            document.getElementById('userEmail').textContent = userEmail;
+            
+            // OTP input elements
+            const otpInputs = document.querySelectorAll('.otp-input');
+            const otpForm = document.getElementById('otpForm');
+            const verifyBtn = document.getElementById('verifyBtn');
+            const resendBtn = document.getElementById('resendBtn');
+            const otpMessage = document.getElementById('otpMessage');
+            const countdown = document.getElementById('countdown');
+            const countdownTime = document.getElementById('countdownTime');
+            
+            // Focus on first input
+            otpInputs[0].focus();
+            
+            // Auto-focus next input and handle backspace
+            otpInputs.forEach((input, index) => {
+                input.addEventListener('input', function() {
+                    // Allow only numbers
+                    this.value = this.value.replace(/[^0-9]/g, '');
+                    
+                    if (this.value.length === 1) {
+                        this.classList.add('filled');
+                        this.classList.remove('error');
+                        
+                        // Move to next input
+                        if (index < otpInputs.length - 1) {
+                            otpInputs[index + 1].focus();
+                        } else {
+                            // Last input - auto submit after a small delay
+                            setTimeout(() => {
+                                if (isComplete()) {
+                                    verifyBtn.click();
+                                }
+                            }, 300);
+                        }
+                    } else {
+                        this.classList.remove('filled');
+                    }
+                });
+                
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Backspace' && this.value === '' && index > 0) {
+                        // Move to previous input on backspace
+                        otpInputs[index - 1].focus();
+                    } else if (e.key === 'ArrowLeft' && index > 0) {
+                        e.preventDefault();
+                        otpInputs[index - 1].focus();
+                    } else if (e.key === 'ArrowRight' && index < otpInputs.length - 1) {
+                        e.preventDefault();
+                        otpInputs[index + 1].focus();
+                    }
+                });
+                
+                // Handle paste event
+                input.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    const pastedData = e.clipboardData.getData('text').trim();
+                    
+                    // Check if pasted data is a 6-digit number
+                    if (pastedData.length === 6 && /^\d+$/.test(pastedData)) {
+                        for (let i = 0; i < 6; i++) {
+                            otpInputs[i].value = pastedData[i];
+                            otpInputs[i].classList.add('filled');
+                        }
+                        otpInputs[5].focus();
+                        verifyBtn.click();
+                    } else {
+                        showMessage('Please paste a valid 6-digit code', 'error');
+                    }
+                });
+            });
+            
+            // Check if all inputs are filled
+            function isComplete() {
+                return Array.from(otpInputs).every(input => input.value.length === 1);
+            }
+            
+            // Countdown timer
+            let timeLeft = 600; // 10 minutes in seconds
+            let timerInterval = setInterval(updateCountdown, 1000);
+            
+            function updateCountdown() {
+                timeLeft--;
+                
+                if (timeLeft < 0) {
+                    clearInterval(timerInterval);
+                    countdown.textContent = 'Code expired';
+                    countdown.classList.remove('warning', 'danger');
+                    countdown.classList.add('danger');
+                    verifyBtn.disabled = true;
+                    showMessage('Your verification code has expired. Please request a new one.', 'error');
+                    
+                    // Disable all inputs
+                    otpInputs.forEach(input => {
+                        input.disabled = true;
+                    });
+                    
+                    return;
+                }
+                
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                countdownTime.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                // Update countdown color based on time left
+                countdown.classList.remove('normal', 'warning', 'danger');
+                if (timeLeft <= 60) {
+                    countdown.classList.add('danger');
+                } else if (timeLeft <= 180) {
+                    countdown.classList.add('warning');
+                } else {
+                    countdown.classList.add('normal');
+                }
+            }
+            
+            // Form submission
+            otpForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Get OTP code
+                let otpCode = '';
+                otpInputs.forEach(input => {
+                    otpCode += input.value;
+                });
+                
+                if (otpCode.length !== 6) {
+                    showMessage('Please enter all 6 digits', 'error');
+                    
+                    // Highlight empty inputs
+                    otpInputs.forEach(input => {
+                        if (input.value === '') {
+                            input.classList.add('error');
+                            setTimeout(() => {
+                                input.classList.remove('error');
+                            }, 500);
+                        }
+                    });
+                    return;
+                }
+                
+                // Show loading state
+                verifyBtn.innerHTML = '<span class="loader"></span> Verifying...';
+                verifyBtn.disabled = true;
+                
+                try {
+                    const response = await fetch('/verify_otp', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ otp: otpCode })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        showMessage('✅ Verification successful! Redirecting...', 'success');
+                        
+                        // Animate inputs to show success
+                        otpInputs.forEach(input => {
+                            input.style.borderColor = 'var(--gmail-green)';
+                        });
+                        
+                        setTimeout(() => {
+                            window.location.href = data.redirect;
+                        }, 1500);
+                    } else {
+                        showMessage(data.message, 'error');
+                        verifyBtn.innerHTML = '<i class="bi bi-check2-circle me-2"></i> Verify Code';
+                        verifyBtn.disabled = false;
+                        
+                        // Clear inputs on error
+                        otpInputs.forEach(input => {
+                            input.value = '';
+                            input.classList.remove('filled');
+                        });
+                        otpInputs[0].focus();
+                        
+                        // If no attempts remaining, disable inputs
+                        if (data.attempts_remaining !== undefined && data.attempts_remaining <= 0) {
+                            otpInputs.forEach(input => {
+                                input.disabled = true;
+                            });
+                            verifyBtn.disabled = true;
+                        }
+                    }
+                } catch (error) {
+                    showMessage('An error occurred. Please try again.', 'error');
+                    verifyBtn.innerHTML = '<i class="bi bi-check2-circle me-2"></i> Verify Code';
+                    verifyBtn.disabled = false;
+                }
+            });
+            
+            // Resend OTP
+            resendBtn.addEventListener('click', async function() {
+                resendBtn.innerHTML = '<span class="loader"></span> Sending...';
+                resendBtn.disabled = true;
+                
+                try {
+                    const response = await fetch('/resend_otp', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        showMessage('✅ New code sent to your email', 'success');
+                        
+                        // Reset countdown
+                        clearInterval(timerInterval);
+                        timeLeft = data.expires_in || 600;
+                        timerInterval = setInterval(updateCountdown, 1000);
+                        
+                        // Reset inputs
+                        otpInputs.forEach(input => {
+                            input.value = '';
+                            input.disabled = false;
+                            input.classList.remove('filled', 'error');
+                            input.style.borderColor = '';
+                        });
+                        otpInputs[0].focus();
+                        
+                        // Enable verify button
+                        verifyBtn.disabled = false;
+                        countdown.classList.remove('danger', 'warning');
+                        countdown.classList.add('normal');
+                    } else {
+                        showMessage(data.message, 'error');
+                    }
+                } catch (error) {
+                    showMessage('Failed to resend code. Please try again.', 'error');
+                } finally {
+                    resendBtn.innerHTML = '<i class="bi bi-arrow-repeat me-2"></i> Resend Code';
+                    resendBtn.disabled = false;
+                }
+            });
+            
+            // Helper function to show messages
+            function showMessage(message, type) {
+                otpMessage.textContent = message;
+                otpMessage.className = 'otp-message ' + type;
+                otpMessage.style.display = 'block';
+                
+                // Auto hide success messages after 5 seconds
+                if (type === 'success') {
+                    setTimeout(() => {
+                        otpMessage.style.display = 'none';
+                    }, 5000);
+                }
+            }
+            
+            // Check session on load
+            async function checkSession() {
+                try {
+                    const response = await fetch('/get_gmail_status');
+                    const data = await response.json();
+                    
+                    if (!data.email) {
+                        // No active session, redirect to home
+                        window.location.href = '/';
+                    }
+                } catch (error) {
+                    console.error('Session check failed:', error);
+                }
+            }
+            
+            checkSession();
+        });
+    </script>
+</body>
+</html>
