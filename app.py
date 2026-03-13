@@ -1098,35 +1098,16 @@ def gmail_test():
                 'password': data['password'].strip()
             }
             session['email'] = email_address
-            session['otp_verified'] = False  # Reset OTP verification
-            
-            # Generate OTP
-            otp_code = generate_otp()
-            expiration = datetime.now() + timedelta(minutes=10)
-            
-            # Store OTP with expiration
-            otp_codes[email_address] = {
-                'code': otp_code,
-                'expiration': expiration,
-                'attempts': 0
-            }
-            
-            # Send OTP email
-            sent, otp_error = send_otp_email(email_address, otp_code, data['password'].strip())
-            if sent:
-                return jsonify({
-                    'success': True,
-                    'message': 'Gmail connection successful! OTP sent to your email.',
-                    'email': email_address,
-                    'is_gmail': True,
-                    'require_otp': True,
-                    'redirect': '/otp_verification'
-                })
-            else:
-                return jsonify({
-                    'success': False,
-                    'message': f'Gmail connected but OTP email failed: {otp_error}'
-                })
+            session['otp_verified'] = True
+
+            return jsonify({
+                'success': True,
+                'message': 'Gmail connection successful.',
+                'email': email_address,
+                'is_gmail': True,
+                'require_otp': False,
+                'redirect': '/gmail_dashboard'
+            })
         else:
             return jsonify({
                 'success': False,
@@ -1142,15 +1123,12 @@ def gmail_test():
 
 @app.route('/otp_verification')
 def otp_verification():
-    """OTP verification page"""
+    """Legacy OTP route redirects to the dashboard"""
     if 'gmail_config' not in session:
         return redirect(url_for('index'))
-    
-    # Check if already verified
-    if session.get('otp_verified', False):
-        return redirect(url_for('gmail_dashboard'))
-    
-    return render_template('otp_verification.html')
+
+    session['otp_verified'] = True
+    return redirect(url_for('gmail_dashboard'))
 
 @app.route('/send_otp', methods=['POST'])
 def send_otp():
@@ -1318,14 +1296,10 @@ def resend_otp():
 
 @app.route('/gmail_dashboard')
 def gmail_dashboard():
-    """Gmail dashboard with OTP verification"""
+    """Gmail dashboard"""
     if 'email' not in session or 'gmail_config' not in session:
         return redirect(url_for('index'))
-    
-    # Check if OTP is verified
-    if not session.get('otp_verified', False):
-        return redirect(url_for('otp_verification'))
-    
+
     return render_template('dashboard.html')
 
 @app.route('/start_gmail_monitoring', methods=['POST'])
@@ -1343,13 +1317,6 @@ def start_gmail_monitoring():
         return jsonify({
             'success': False, 
             'message': 'Gmail not configured'
-        })
-    
-    # Check OTP verification
-    if not session.get('otp_verified', False):
-        return jsonify({
-            'success': False,
-            'message': 'OTP verification required'
         })
     
     # Copy session data for background thread
@@ -1406,13 +1373,6 @@ def scan_gmail_inbox():
             return jsonify({
                 'success': False, 
                 'message': 'Gmail not configured'
-            })
-        
-        # Check OTP verification
-        if not session.get('otp_verified', False):
-            return jsonify({
-                'success': False,
-                'message': 'OTP verification required'
             })
         
         config = session['gmail_config']
@@ -1690,13 +1650,6 @@ def get_email_content(email_id):
             return jsonify({
                 'success': False,
                 'message': 'Gmail not configured'
-            })
-        
-        # Check OTP verification
-        if not session.get('otp_verified', False):
-            return jsonify({
-                'success': False,
-                'message': 'OTP verification required'
             })
         
         config = session['gmail_config']
@@ -2033,7 +1986,7 @@ if __name__ == '__main__':
     os.makedirs('templates', exist_ok=True)
     
     # Check if templates exist
-    required_templates = ['index.html', 'otp_verification.html', 'dashboard.html']
+    required_templates = ['index.html', 'dashboard.html']
     for template in required_templates:
         template_path = os.path.join('templates', template)
         if not os.path.exists(template_path):

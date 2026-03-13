@@ -656,7 +656,7 @@
                     // Save email locally
                     localStorage.setItem('gmail_email', email);
                     
-                    // Redirect to route provided by backend (OTP or dashboard)
+                    // Redirect to the dashboard route provided by the backend
                     setTimeout(() => {
                         window.location.href = result.redirect || '/gmail_dashboard';
                     }, 1500);
