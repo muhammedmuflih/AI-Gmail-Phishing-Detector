@@ -316,7 +316,7 @@ app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
-socketio = SocketIO(app, async_mode='threading', cors_allowed_origins="*")
+socketio = SocketIO(app, async_mode='gevent' if os.getenv('PORT') else 'threading', cors_allowed_origins="*")
 
 # Global variables
 monitoring_active = False
@@ -1024,6 +1024,12 @@ analyzer = GmailPhishingAnalyzer()
 # ============================================
 # 3. Flask Routes
 # ============================================
+@app.route('/health')
+def health():
+    """Health check for gunicorn/Render"""
+    return jsonify({'status': 'ok', 'service': 'AI Gmail Phishing Detector'}), 200
+
+
 @app.route('/')
 def index():
     """Home page"""
