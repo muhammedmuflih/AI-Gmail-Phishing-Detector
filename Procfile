@@ -1,2 +1,2 @@
-web: EVENTLET_NO_GREENDNS=yes gunicorn --worker-class gevent -w 1 --timeout 300 --preload --bind 0.0.0.0:$PORT app:app
+web: gunicorn --worker-class gthread --threads 4 -w 1 --timeout 300 --bind 0.0.0.0:$PORT app:app
 

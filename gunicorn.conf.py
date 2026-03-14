@@ -2,11 +2,10 @@ import os
 
 bind = "0.0.0.0:" + os.getenv('PORT', '5000')
 workers = 1
-worker_class = "gevent"
-worker_connections = 1000
+worker_class = "gthread"
+threads = 4
 timeout = 300
 keepalive = 2
-preload_app = True
 loglevel = "error"
 accesslog = "-"
 errorlog = "-"
