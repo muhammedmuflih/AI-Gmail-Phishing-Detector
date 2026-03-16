@@ -1,34 +1,34 @@
-# Fix Render Deployment: Eventlet Worker Class Error
+# Fix Render Deployment: Gunicorn Worker Class Mismatch
 
 ## Plan Overview
-Add eventlet dependency and update gunicorn configs for Render compatibility.
+Replace the Render `eventlet` worker setup with a threaded Gunicorn setup that matches the Flask-SocketIO app configuration.
 
 ## Steps to Complete
 
 ### ☐ 1. Update requirements.txt
-Add `eventlet>=0.24.1`
+Replace `eventlet` with `simple-websocket==1.0.0`
 
-### ☐ 2. Update Procfile  
-Change `worker-class gthread` → `worker-class eventlet`
+### ☐ 2. Update Procfile
+Change `worker-class eventlet` to `worker-class gthread`
 
 ### ☐ 3. Update render.yaml
-Change `startCommand` `worker-class gthread` → `worker-class eventlet`
+Change the `startCommand` from `worker-class eventlet` to `worker-class gthread`
 
 ### ☐ 4. Update gunicorn.conf.py
-Set `worker_class = 'eventlet'`, `workers=1`
+Set `worker_class = 'gthread'` and configure `threads`
 
 ### ☐ 5. Install dependencies
 `pip install -r requirements.txt`
 
-### ☐ 6. Local test with eventlet
-`gunicorn --worker-class eventlet --bind 0.0.0.0:5000 app:app`
+### ☐ 6. Local test with gthread
+`gunicorn --worker-class gthread --threads 8 --bind 0.0.0.0:5000 app:app`
 
 ### ☐ 7. Commit and deploy
-`git add . && git commit -m "Fix Render deployment: add eventlet worker" && git push`
+`git add gunicorn.conf.py Procfile render.yaml requirements.txt TODO.md && git commit -m "Fix Render deployment worker config" && git push origin main`
 
 ### ☐ 8. Verify Render deployment
 Check Render dashboard/logs for successful start
 
 ## Status: Ready to execute step-by-step
 
-**Next Action:** Update requirements.txt (Step 1)
+**Next Action:** Commit the worker configuration changes and push to GitHub.
