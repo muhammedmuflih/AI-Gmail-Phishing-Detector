@@ -1,26 +1,34 @@
-# Render Deployment Fix - TODO Steps
+# Fix Render Deployment: Eventlet Worker Class Error
 
-✅ **Step 1**: Create TODO.md (Done)
+## Plan Overview
+Add eventlet dependency and update gunicorn configs for Render compatibility.
 
-✅ **Step 2**: Optimize requirements.txt - Remove unused ML deps (numpy, pandas, scikit-learn, scipy, joblib) (Done)
+## Steps to Complete
 
-✅ **Step 3**: Update render.yaml - Switch to gevent, preload, timeout 300 (Done)
+### ☐ 1. Update requirements.txt
+Add `eventlet>=0.24.1`
 
-✅ **Step 4**: Update app.py - Add /health endpoint, lazy imports, prod SocketIO config (Done)
+### ☐ 2. Update Procfile  
+Change `worker-class gthread` → `worker-class eventlet`
 
-✅ **Step 5**: Create Procfile and gunicorn.conf.py (Done)
+### ☐ 3. Update render.yaml
+Change `startCommand` `worker-class gthread` → `worker-class eventlet`
 
-**Step 6**: Local test with gunicorn gevent
+### ☐ 4. Update gunicorn.conf.py
+Set `worker_class = 'eventlet'`, `workers=1`
 
-**Step 7**: Commit and push to GitHub, trigger Render redeploy
+### ☐ 5. Install dependencies
+`pip install -r requirements.txt`
 
-**Progress**: 5/7 steps complete
+### ☐ 6. Local test with eventlet
+`gunicorn --worker-class eventlet --bind 0.0.0.0:5000 app:app`
 
-**Step 6**: Local test with gunicorn gevent
+### ☐ 7. Commit and deploy
+`git add . && git commit -m "Fix Render deployment: add eventlet worker" && git push`
 
-**Step 7**: Commit and push to GitHub, trigger Render redeploy
+### ☐ 8. Verify Render deployment
+Check Render dashboard/logs for successful start
 
-**Progress**: 1/7 steps complete
+## Status: Ready to execute step-by-step
 
-**Status**: Optimizing for Render free tier (RAM <512MB, startup <15min)
-
+**Next Action:** Update requirements.txt (Step 1)

@@ -2,8 +2,8 @@ import os
 
 bind = "0.0.0.0:" + os.getenv('PORT', '5000')
 workers = 1
-worker_class = "gthread"
-threads = 4
+worker_class = "eventlet"
+workers = 1
 timeout = 300
 keepalive = 2
 loglevel = "error"
